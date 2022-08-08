@@ -66,8 +66,8 @@ elif os.name == 'posix':
 
 study_path = os.path.join(root_path, 'data') + os.path.sep
 result_path = os.path.join(root_path, 'results') + os.path.sep
-cluster_path = os.path.join(root_path, 'scripts', 'ABSeq_scripts', 'cluster') + os.path.sep
-scripts_path = os.path.join(root_path, 'scripts', 'ABSeq_scripts') + os.path.sep
+cluster_path = os.path.join(root_path, 'scripts', 'ABSeq_PUBLICATION', 'cluster') + os.path.sep
+scripts_path = os.path.join(root_path, 'scripts', 'ABSeq_PUBLICATION') + os.path.sep
 BIDS_path = os.path.join(study_path, 'BIDS') + os.path.sep
 
 

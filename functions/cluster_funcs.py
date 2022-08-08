@@ -29,7 +29,7 @@ def create_qsub(function_name, folder_name, suffix_name, sublist_subjects=None, 
     base_path = config.scripts_path
     initbody = 'import sys \n'
     initbody = initbody + "sys.path.append(" + "'" + base_path + "')\n"
-    initbody = initbody + 'from ABseq_func import cluster_funcs\n'
+    initbody = initbody + 'from functions import cluster_funcs\n'
 
     # Write actual job files
     python_file, Listfile, ListJobName = [], [], []

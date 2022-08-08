@@ -6,6 +6,8 @@ import config
 import os.path as op
 from functions import utils, epoching_funcs
 import pickle
+import sys
+sys.path.append('/neurospin/meg/meg_tmp/ABSeq_Samuel_Fosca2019/scripts/ABSeq_PUBLICATION/TransitionProbModel/')
 from MarkovModel_Python import IdealObserver as IO
 import matplotlib.pyplot as plt
 

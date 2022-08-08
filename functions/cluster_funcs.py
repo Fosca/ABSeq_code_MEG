@@ -130,7 +130,6 @@ def apply_ICA(subject):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # EPOCHING --- missing from this script as it should take the BIDS formatted data as input
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # REGRESSIONS FUNCTIONS (PREDICTORS : COMPLEXITY, SURPRISE ETC
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -162,7 +161,7 @@ def train_SVM_decoder_all_sequences(subject):
     SVM_funcs.generate_SVM_all_sequences(subject)
 
 def test_SVM_decoder_on_each_sequence(subject):
-    SVM_funcs.GAT_SVM_trained_all_sequences(subject)
+    SVM_funcs.GAT_SVM_trained_all_sequences(subject,metric='projection_normal')
 
 def apply_decoder_on_full_sequences(subject):
     SVM_funcs.apply_SVM_filter_16_items_epochs(subject, times=[0.131, 0.210], sliding_window=True, cleaned=True)

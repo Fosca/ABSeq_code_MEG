@@ -664,7 +664,7 @@ def sliding_window(epoch,sliding_window_size=25, sliding_window_step=1,
     :return:
     """
 
-    from ABseq_func import SVM_funcs
+    from functions import SVM_funcs
 
     xformer = SVM_funcs.SlidingWindow(window_size=sliding_window_size, step=sliding_window_step,
                                       min_window_size=sliding_window_min_size)

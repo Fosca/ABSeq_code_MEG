@@ -9,7 +9,7 @@ import os.path as op
 import mne
 import glob
 import warnings
-from autoreject import AutoReject
+#from autoreject import AutoReject
 import pickle
 from functions import utils
 

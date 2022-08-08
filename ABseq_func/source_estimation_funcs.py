@@ -2,7 +2,6 @@ import mne
 import config
 import matplotlib.pyplot as plt
 import os.path as op
-from ABseq_func import *
 import glob
 import shutil
 import os

@@ -1,8 +1,7 @@
 import sys
 sys.path.append("/neurospin/meg/meg_tmp/ABSeq_Samuel_Fosca2019/scripts/ABSeq_scripts/")
 import config
-from ABseq_func import TP_funcs, evoked_funcs, linear_reg_funcs, stats_funcs
-from functions import utils, epoching_funcs
+from functions import utils, epoching_funcs, evoked_funcs, TP_funcs, linear_reg_funcs, stats_funcs
 import os.path as op
 import os
 from sklearn.preprocessing import scale

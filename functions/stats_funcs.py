@@ -10,8 +10,7 @@ from scipy.signal import savgol_filter
 import matplotlib.ticker as ticker
 
 import config
-from ABseq_func import evoked_funcs
-from functions import epoching_funcs
+from functions import epoching_funcs, evoked_funcs
 
 
 def run_cluster_permutation_test_1samp(data, ch_type='eeg', nperm=2 ** 12, threshold=None, n_jobs=6, tail=0):

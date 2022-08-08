@@ -53,7 +53,7 @@ def extract_stc_per_sequence(subject,condition_name="habituation",baseline=True,
             ev1 = ep_bal['ViolationOrNot == 0 and SequenceID == ' + str(seqID)].average()
             ev2 = ep_bal['ViolationOrNot == 1 and SequenceID == ' + str(seqID)].average()
             cont = mne.combine_evoked([ev1,-ev2],weights='equal')
-            stcs['seq'+str(seqID)] = source_estimation_funcs.compute_sources_from_evoked(subject,cont, morph_sources=morph_sources)
+            stcs['seq'+str(seqID)] = source_estimation_funcs.compute_sources_from_evoked(subject, cont, morph_sources=morph_sources)
 
     else:
         ValueError("The condition name was not recognized")

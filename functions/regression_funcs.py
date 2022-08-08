@@ -1,7 +1,7 @@
 import sys
 sys.path.append("/neurospin/meg/meg_tmp/ABSeq_Samuel_Fosca2019/scripts/ABSeq_scripts/")
 import config
-from functions import utils, epoching_funcs, evoked_funcs, TP_funcs, linear_reg_funcs, stats_funcs
+from functions import utils, epoching_funcs, evoked_funcs, TP_funcs, stats_funcs
 import os.path as op
 import os
 from sklearn.preprocessing import scale
@@ -12,6 +12,8 @@ import numpy as np
 import mne
 import copy
 import warnings
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 # ----------------------------------------------------------------------------------------------------------------------
 def update_metadata_epochs_and_save_epochs(subject):
@@ -323,6 +325,221 @@ def save_evoked_levels_regressors(epochs,subject, regressors_names,results_path,
 
     return True
 
+
+
+
+def plot_average_betas_with_sources(betas, analysis_name, fig_path, xlim=[-50, 350]):
+    savepath = op.join(fig_path, 'Sources')
+    utils.create_folder(savepath)
+
+    all_stcs = dict()
+    all_betasevoked = dict()
+    for x, regressor_name in enumerate(betas.keys()):
+        all_stcs[regressor_name] = []
+        all_betasevoked[regressor_name] = []
+        for nsub, subject in enumerate(config.subjects_list):
+            print(regressor_name + ' regressor: sources for subject ' + str(nsub))
+            data = betas[regressor_name][nsub].average()  # 'fake' average since evoked was stored as 1 epoch
+            stc = source_estimation_funcs.normalized_sources_from_evoked(subject, data)
+            all_stcs[regressor_name].append(stc)
+            all_betasevoked[regressor_name].append(data)
+
+        # Group mean stc + betas
+        n_subjects = len(all_stcs[regressor_name])
+        mean_stc = all_stcs[regressor_name][0].copy()  # get copy of first instance
+        for sub in range(1, n_subjects):
+            mean_stc._data += all_stcs[regressor_name][sub].data
+        mean_stc._data /= n_subjects
+        mean_betas = mne.grand_average(all_betasevoked[regressor_name])
+
+        # Create figures
+        output_file = op.join(savepath, 'Sources_' + regressor_name + '.svg')
+        figure_title = analysis_name + ' regression: ' + regressor_name
+        source_estimation_funcs.sources_evoked_figure(mean_stc, mean_betas, output_file, figure_title, timepoint='max', ch_type='mag', colormap='hot', colorlims='auto', signallims=None, xlim=xlim)
+        output_file = op.join(savepath, 'Sources_' + regressor_name + '_at70ms.svg')
+        source_estimation_funcs.sources_evoked_figure(mean_stc, mean_betas, output_file, figure_title, timepoint=0.070, ch_type='mag', colormap='viridis', colorlims='auto', signallims=None)
+        output_file = op.join(savepath, 'Sources_' + regressor_name + '_at140ms.svg')
+        source_estimation_funcs.sources_evoked_figure(mean_stc, mean_betas, output_file, figure_title, timepoint=0.140, ch_type='mag', colormap='viridis', colorlims='auto', signallims=None)
+
+        # Timecourse source figure
+        output_file = op.join(savepath, 'Sources_' + regressor_name + '_timecourse.svg')
+        times_to_plot = [.0, .050, .100, .150, .200, .250, .300]
+        win_size = .050
+        stc = mean_stc
+        maxval = np.max(stc._data)
+        colorlims = [maxval * .30, maxval * .40, maxval * .80]
+        # plot and screenshot for each timewindow
+        stc_screenshots = []
+        for t in times_to_plot:
+            twin_min = t
+            twin_max = t + win_size
+            stc_timewin = stc.copy()
+            stc_timewin.crop(tmin=twin_min, tmax=twin_max)
+            stc_timewin = stc_timewin.mean()
+            brain = stc_timewin.plot(views=['lat'], surface='inflated', hemi='split', size=(1200, 600), subject='fsaverage', clim=dict(kind='value', lims=colorlims),
+                                     subjects_dir=op.join(config.root_path, 'data', 'MRI', 'fs_converted'), background='w', smoothing_steps=5,
+                                     colormap='hot', colorbar=False, time_viewer=False, backend='mayavi')
+            screenshot = brain.screenshot()
+            brain.close()
+            nonwhite_pix = (screenshot != 255).any(-1)
+            nonwhite_row = nonwhite_pix.any(1)
+            nonwhite_col = nonwhite_pix.any(0)
+            cropped_screenshot = screenshot[nonwhite_row][:, nonwhite_col]
+            plt.close('all')
+            stc_screenshots.append(cropped_screenshot)
+        # main figure
+        fig, axes = plt.subplots(len(times_to_plot), 1, figsize=(len(times_to_plot) * 1.1, 4))
+        fig.suptitle(regressor_name, fontsize=8, fontweight='bold')
+        for idx in range(len(times_to_plot)):
+            axes[idx].imshow(stc_screenshots[idx])
+            axes[idx].axis('off')
+            twin_min = times_to_plot[idx]
+            twin_max = times_to_plot[idx] + win_size
+            axes[idx].set_title('[%d - %d ms]' % (twin_min * 1000, twin_max * 1000), fontsize=6)
+        # tweak margins and spacing
+        fig.subplots_adjust(left=0.1, right=0.9, bottom=0.01, top=0.9, wspace=1, hspace=0.5)
+        fig.savefig(output_file, bbox_inches='tight', dpi=600)
+        print('========> ' + output_file + " saved !")
+        plt.close(fig)
+
+        # Or explore sources activation
+        # maxvtx,  max_t_val = mean_stc.get_peak()
+        # brain = mean_stc.plot(views=['lat'], surface='pial', hemi='split', size=(1200, 600), subject='fsaverage', clim='auto',
+        #                       subjects_dir=op.join(config.root_path, 'data', 'MRI', 'fs_converted'), initial_time=max_t_val, smoothing_steps=5, time_viewer=True) # show_traces=True, (not available with MNE 0.19 ?)
+        # mni_max = mne.vertex_to_mni(maxvtx, 0,  subject='fsaverage', subjects_dir=op.join(config.root_path, 'data', 'MRI', 'fs_converted'))[0]
+        # print('Peak at {:.0f}'.format(mni_max[0]) + ',{:.0f}'.format(mni_max[1]) + ', {:.0f}'.format(mni_max[2]))
+        # plot the peak activation
+        # plt.figure()
+        # plt.axes([.1, .275, .85, .625])
+        # hl = plt.plot(stc.times, stc.data[maxvtx], 'b')[0]
+        # lt.xlabel('Time (s)')
+        # plt.ylabel('Source amplitude (dSPM)')
+        # plt.xlim(stc.times[0], stc.times[-1])
+        # plt.figlegend([hl], ['Peak at = %s' % mni_max.round(2)], 'lower center')
+        # plt.show()
+
+    return all_stcs, all_betasevoked  # can be useful
+
+
+def plot_betas_heatmaps(betas, ch_types, fig_path,suffix=''):
+    savepath = op.join(fig_path, 'Signals')
+    utils.create_folder(savepath)
+    for ch_type in ch_types:
+        fig, axes = plt.subplots(1, len(betas.keys()), figsize=(len(betas.keys()) * 4, 6), sharex=False, sharey=False, constrained_layout=True)
+        fig.suptitle(ch_type, fontsize=12, weight='bold')
+        # ax = axes.ravel()[::1]
+
+        # Loop over the different betas
+        for x, regressor_name in enumerate(betas.keys()):
+            # ---- Data
+            evokeds = betas[regressor_name].average()
+            if ch_type == 'eeg':
+                betadata = evokeds.copy().pick_types(eeg=True, meg=False).data
+            elif ch_type == 'mag':
+                betadata = evokeds.copy().pick_types(eeg=False, meg='mag').data
+            elif ch_type == 'grad':
+                betadata = evokeds.copy().pick_types(eeg=False, meg='grad').data
+            # minT = min(evokeds.times) * 1000
+            minT = -0.050 * 1000
+            maxT = max(evokeds.times) * 1000
+            # ---- Plot
+            if len(betas.keys()) == 1:
+                subplots_ax = axes
+            else:
+                subplots_ax = axes[x]
+            im = subplots_ax.imshow(betadata, origin='upper', extent=[minT, maxT, betadata.shape[0], 0], aspect='auto', cmap='viridis')  # cmap='RdBu_r'
+            subplots_ax.axvline(0, linestyle='-', color='black', linewidth=1)
+            for xx in range(3):
+                subplots_ax.axvline(250 * xx, linestyle='--', color='black', linewidth=0.5)
+            subplots_ax.set_xlabel('Time (ms)')
+            subplots_ax.set_ylabel('Channels')
+            subplots_ax.set_title(regressor_name, loc='center', weight='normal')
+            fig.colorbar(im, ax=subplots_ax, shrink=1, location='bottom')
+        fig_name = op.join(savepath, 'betas_' + ch_type +suffix+ '.svg')
+        print('Saving ' + fig_name)
+        plt.savefig(fig_name, dpi=300)
+        # plt.close(fig)
+    # return betadata, plt, savepath
+
+
+def plot_betas_heatmaps_with_clusters(analysis_name, betas, ch_type, regressor_name, cluster_info, good_cluster_inds, savepath,suffix=''):
+    beta_average = betas[regressor_name].copy().average()
+    if ch_type == 'eeg':
+        betadata = beta_average.copy().pick_types(eeg=True, meg=False).data
+    elif ch_type == 'mag':
+        betadata = beta_average.copy().pick_types(eeg=False, meg='mag').data
+    elif ch_type == 'grad':
+        betadata = beta_average.copy().pick_types(eeg=False, meg='grad').data
+    times = (beta_average.times) * 1000
+    minT = min(times)
+    maxT = max(times)
+    # ---- Plot
+    fig, ax = plt.subplots(1, 1, figsize=(4, 6), constrained_layout=True)
+    fig.suptitle(ch_type, fontsize=12, weight='bold')
+    im = ax.imshow(betadata, origin='upper', extent=[minT, maxT, betadata.shape[0], 0], aspect='auto', cmap='viridis')  # cmap='RdBu_r'
+    ax.axvline(0, linestyle='-', color='black', linewidth=1)
+    for xx in range(3):
+        ax.axvline(250 * xx, linestyle='--', color='black', linewidth=0.5)
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('Channels')
+    ax.set_title(regressor_name, loc='center', weight='normal')
+    # fig.colorbar(im, ax=ax, shrink=1, location='bottom')
+    fmt = ticker.ScalarFormatter(useMathText=True)
+    fmt.set_powerlimits((0, 0))
+    cb = fig.colorbar(im, ax=ax, location='bottom', format=fmt, shrink=1, aspect=30, pad=.005)
+    cb.ax.yaxis.set_offset_position('left')
+    cb.set_label('Beta')
+    # ---- Add clusters
+    mask = np.ones(betadata.shape)
+    for i_clu, clu_idx in enumerate(good_cluster_inds):
+        cinfo = cluster_info[i_clu]
+        xstart = np.where(times == cinfo['sig_times'][0])[0][0]
+        xend = np.where(times == cinfo['sig_times'][-1])[0][0]
+        chanidx = cinfo['channels_cluster']
+        for yidx in range(len(chanidx)):
+            mask[chanidx[yidx], xstart:xend] = 0
+    ax.imshow(mask, origin='upper', extent=[minT, maxT, betadata.shape[0], 0], aspect='auto', cmap='gray', alpha=.3)
+    fig_name = savepath + op.sep + analysis_name + '_' + regressor_name + '_stats_' + ch_type + suffix + '_allclust_heatmap.jpg'
+    print('Saving ' + fig_name)
+    fig.savefig(fig_name, dpi=300, facecolor=fig.get_facecolor(), edgecolor='none')
+    plt.close('all')
+
+
+def plot_betas_butterfly(betas, ch_types, fig_path,suffix=''):
+    savepath = op.join(fig_path, 'Signals')
+    utils.create_folder(savepath)
+
+    # ylim_eeg = 0.3
+    # ylim_mag = 100
+    # ylim_grad = 6
+    # Butterfly plots - in EEG/MAG/GRAD
+    # ylim = dict(eeg=[-ylim_eeg, ylim_eeg], mag=[-ylim_mag, ylim_mag], grad=[-ylim_grad, ylim_grad])
+    # ts_args = dict(gfp=True, time_unit='s', ylim=ylim)
+    ts_args = dict(gfp=True, time_unit='s')
+    topomap_args = dict(time_unit='s')
+    times = 'peaks'
+    for x, regressor_name in enumerate(betas.keys()):
+        evokeds = betas[regressor_name].average()
+
+        if 'eeg' in ch_types:  # EEG
+            fig = evokeds.plot_joint(ts_args=ts_args, title='EEG_' + regressor_name, topomap_args=topomap_args, picks='eeg', times=times, show=False)
+            fig_name = savepath + op.sep + ('EEG_' + regressor_name + suffix+'.svg')
+            print('Saving ' + fig_name)
+            plt.savefig(fig_name, dpi=300, bbox_inches='tight')
+            plt.close(fig)
+        if 'mag' in ch_types:  # MAG
+            fig = evokeds.plot_joint(title='MAG_' + regressor_name, picks='mag', times=times, show=False)
+            fig_name = savepath + op.sep + ('MAG_' + regressor_name +suffix+ '.svg')
+            print('Saving ' + fig_name)
+            plt.savefig(fig_name, dpi=300)
+            plt.close(fig)
+        if 'grad' in ch_types:  # GRAD
+            fig = evokeds.plot_joint(ts_args=ts_args, title='GRAD_' + regressor_name, topomap_args=topomap_args, picks='grad', times=times, show=False)
+            fig_name = savepath + op.sep + ('GRAD_' + regressor_name +suffix+ '.svg')
+            print('Saving ' + fig_name)
+            plt.savefig(fig_name, dpi=300, bbox_inches='tight')
+            plt.close(fig)
+
 # ----------------------------------------------------------------------------------------------------------------------
 def merge_individual_regression_results(regressors_names, epochs_fname, filter_name,suffix = ''):
 
@@ -437,13 +654,13 @@ def regression_group_analysis(regressors_names, epochs_fname, filter_name, suffi
 
     # ====================== PLOT THE GROUP-AVERAGED SOURCES OF THE BETAS  ===================== #
     if Do3Dplot:
-        all_stcs, all_betasevoked = linear_reg_funcs.plot_average_betas_with_sources(betas, analysis_name, fig_path, xlim=xlim)
+        all_stcs, all_betasevoked = plot_average_betas_with_sources(betas, analysis_name, fig_path, xlim=xlim)
 
     # ================= PLOT THE HEATMAPS OF THE GROUP-AVERAGED BETAS / CHANNEL ================ #
-    linear_reg_funcs.plot_betas_heatmaps(betas, ch_types, fig_path, suffix=suffix)
+    plot_betas_heatmaps(betas, ch_types, fig_path, suffix=suffix)
 
     # =========================== PLOT THE BUTTERFLY OF THE REGRESSORS ========================== #
-    linear_reg_funcs.plot_betas_butterfly(betas, ch_types, fig_path, suffix=suffix)
+    plot_betas_butterfly(betas, ch_types, fig_path, suffix=suffix)
 
     # =========================================================== #
     # Group stats
@@ -572,7 +789,9 @@ def regression_group_analysis(regressors_names, epochs_fname, filter_name, suffi
                 # ==========  heatmap betas plot
                 # =========================================================== #
                 if len(good_cluster_inds) > 0 and regressor_name != 'Intercept':
-                    linear_reg_funcs.plot_betas_heatmaps_with_clusters(analysis_name, betas, ch_type, regressor_name, cluster_info, good_cluster_inds, savepath,suffix)
+                    plot_betas_heatmaps_with_clusters(analysis_name, betas, ch_type, regressor_name, cluster_info, good_cluster_inds, savepath,suffix)
 
                 if len(good_cluster_inds) > 0:
                     f.close()
+
+

@@ -4,7 +4,6 @@ import os.path as op
 import mne
 import matplotlib.pyplot as plt
 import numpy as np
-from ABseq_func import *
 from functions import utils
 from scipy.signal import savgol_filter
 from scipy.stats import sem

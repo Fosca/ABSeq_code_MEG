@@ -1,6 +1,6 @@
 # This module contains all the functions related to the decoding analysis
 import sys
-sys.path.append('/neurospin/meg/meg_tmp/ABSeq_Samuel_Fosca2019/scripts/ABSeq_scripts')
+sys.path.append('/neurospin/meg/meg_tmp/ABSeq_Samuel_Fosca2019/scripts/ABSeq_PUBLICATION/')
 import os.path as op
 
 import pandas as pd
@@ -113,9 +113,11 @@ def generate_SVM_all_sequences(subject, sliding_window=True,cleaned = True):
     epochs_balanced_mag = epochs_balanced.copy().pick_types(meg='mag')
     epochs_balanced_grad = epochs_balanced.copy().pick_types(meg='grad')
     epochs_balanced_all_chans = epochs_balanced.copy().pick_types(meg=True)
-    sensor_types = ['mag', 'grad', 'all_chans']
-    SVM_results = {'mag': [], 'grad': [], 'all_chans': []}
-    epochs_all = [epochs_balanced_mag, epochs_balanced_grad, epochs_balanced_all_chans]
+    epochs_balanced_as_mag = epochs_balanced.copy().as_type('mag',mode = 'accurate')
+
+    sensor_types = ['mag', 'grad', 'all_chans','as_mag']
+    SVM_results = {'mag': [], 'grad': [], 'all_chans': [], 'as_mag': []}
+    epochs_all = [epochs_balanced_mag, epochs_balanced_grad, epochs_balanced_all_chans,epochs_balanced_as_mag]
 
     # ==============================================================================================
     y_violornot = np.asarray(epochs_balanced.metadata['ViolationOrNot'].values)
@@ -133,7 +135,6 @@ def generate_SVM_all_sequences(subject, sliding_window=True,cleaned = True):
         SVM_results[senso] = {'SVM': All_SVM, 'train_ind': training_inds, 'test_ind': testing_inds,
                               'epochs': epochs_all[l]}
 
-    suf += 'train_different_blocks'
     np.save(op.join(saving_directory, suf + 'SVM_results.npy'), SVM_results)
 
 
@@ -270,7 +271,7 @@ def unique_test_16(epochs_1st_sens, epochs_sens, test_indices):
     epochs_1st_item = []
     for seqID, run_number, trial_number in unique_fields:
         epochs_1st_item.append(epochs_1st_sens[
-                                   'SequenceID == "%i" and RunNumber == %i and TrialNumber == %i ' % (
+                                   'SequenceID == %i and RunNumber == %i and TrialNumber == %i ' % (
                                    seqID, run_number, trial_number)])
 
     return epochs_1st_item

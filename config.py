@@ -43,7 +43,7 @@ seqcolors = seqcolors_plasma7
 
 ###################### exclude EEG? ############################################
 noEEG = True
-ch_types = ['mag', 'grad']
+ch_types = ['mag', 'grad','all_chans','as_mag']
 # ch_types = ['eeg', 'mag', 'grad']
 ###############################################################################
 # DIRECTORIES
@@ -65,7 +65,7 @@ elif os.name == 'posix':
         root_path = '//neurospin/meg/meg_tmp/ABSeq_Samuel_Fosca2019/'
 
 study_path = os.path.join(root_path, 'data') + os.path.sep
-result_path = os.path.join(root_path, 'results') + os.path.sep
+result_path = os.path.join(root_path, 'results_PUBLICATION') + os.path.sep
 cluster_path = os.path.join(root_path, 'scripts', 'ABSeq_PUBLICATION', 'cluster') + os.path.sep
 scripts_path = os.path.join(root_path, 'scripts', 'ABSeq_PUBLICATION') + os.path.sep
 BIDS_path = os.path.join(study_path, 'BIDS') + os.path.sep

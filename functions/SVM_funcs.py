@@ -205,10 +205,10 @@ def GAT_SVM_trained_all_sequences(subject,sliding_window=True,cleaned=True,metri
                     GAT_habituation[fold_number,:,:] = SVM_sens[fold_number].score(data_seq_hab,[0]*data_seq_hab.shape[0])
                 else:
                     metric = 'projection_normal'
-                    GAT_seq[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test)
-                    GAT_standard[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_standard])
-                    GAT_viol[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_violation])
-                    GAT_habituation[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_hab)
+                    GAT_seq[fold_number,:,:] = np.mean(SVM_sens[fold_number].decision_function(data_seq_test[y_sens_and_seq_test==1]),axis=0) - np.mean(SVM_sens[fold_number].decision_function(data_seq_test[y_sens_and_seq_test!=1]),axis=0)
+                    GAT_standard[fold_number,:,:] = np.mean(SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_standard]),axis=0)
+                    GAT_viol[fold_number,:,:] = np.mean(SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_violation]),axis=0)
+                    GAT_habituation[fold_number,:,:] = np.mean(SVM_sens[fold_number].decision_function(data_seq_hab),axis=0)
             #  --------------- now average across the folds ---------------
             GAT_seq_avg = np.mean(GAT_seq, axis=0)
             GAT_seq_habituation_avg = np.mean(GAT_habituation, axis=0)
@@ -291,9 +291,6 @@ def apply_SVM_filter_16_items_epochs(subject, times=[x / 1000 for x in range(0, 
     n_folds = 2
     if sliding_window:
         suf += 'SW_'
-    if cleaned:
-        suf += '_cleaned'
-
     SVM_results = np.load(op.join(SVM_results_path, suf + 'SVM_results.npy'), allow_pickle=True).item()
 
     # ==== define the paths ==============
@@ -377,8 +374,6 @@ def apply_SVM_filter_16_items_epochs_habituation(subject, times=[x / 1000 for x 
     if sliding_window:
         suf += 'SW_'
 
-    if cleaned:
-        suf += '_cleaned'
     SVM_results = np.load(op.join(SVM_results_path, suf + 'SVM_results.npy'), allow_pickle=True).item()
 
     # ==== define the paths ==============

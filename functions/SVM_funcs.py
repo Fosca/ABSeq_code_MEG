@@ -208,10 +208,10 @@ def GAT_SVM_trained_all_sequences(subject,sliding_window=True,cleaned=True,metri
                     GAT_habituation[fold_number,:,:] = SVM_sens[fold_number].score(data_seq_hab,[0]*data_seq_hab.shape[0])
                 else:
                     metric = 'projection_normal'
-                    GAT_seq[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test,y_sens_and_seq_test)
-                    GAT_standard[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_standard],y_sens_and_seq_test[inds_sens_and_seq_test_standard])
-                    GAT_viol[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_violation],y_sens_and_seq_test[inds_sens_and_seq_test_violation])
-                    GAT_habituation[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_hab,[0]*data_seq_hab.shape[0])
+                    GAT_seq[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test)
+                    GAT_standard[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_standard])
+                    GAT_viol[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_test[inds_sens_and_seq_test_violation])
+                    GAT_habituation[fold_number,:,:] = SVM_sens[fold_number].decision_function(data_seq_hab)
             #  --------------- now average across the folds ---------------
             GAT_seq_avg = np.mean(GAT_seq, axis=0)
             GAT_seq_habituation_avg = np.mean(GAT_habituation, axis=0)

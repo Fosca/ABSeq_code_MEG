@@ -152,7 +152,6 @@ def GAT_SVM_trained_all_sequences(subject,sliding_window=True,cleaned=True,metri
     n_folds = 2
     if sliding_window:
         suf += 'SW_'
-    suf += 'train_different_blocks'
 
     if cleaned:
         suf += '_cleaned'
@@ -295,7 +294,6 @@ def apply_SVM_filter_16_items_epochs(subject, times=[x / 1000 for x in range(0, 
     n_folds = 2
     if sliding_window:
         suf += 'SW_'
-    suf += 'train_different_blocks'
     if cleaned:
         suf += '_cleaned'
 
@@ -365,7 +363,7 @@ def apply_SVM_filter_16_items_epochs(subject, times=[x / 1000 for x in range(0, 
 
 # ______________________________________________________________________________________________________________________
 def apply_SVM_filter_16_items_epochs_habituation(subject, times=[x / 1000 for x in range(0, 750, 50)],
-                                                 train_test_different_blocks=True, sliding_window=True,cleaned=True):
+                                                  sliding_window=True,cleaned=True):
     """
     Function to apply the SVM filters on the habituation trials. It is simpler than the previous function as we don't have to select the specific
     trials according to the folds.
@@ -377,14 +375,11 @@ def apply_SVM_filter_16_items_epochs_habituation(subject, times=[x / 1000 for x 
     # ==== load the ems results ==============
     SVM_results_path = op.join(config.SVM_path, subject)
     suf = ''
-    n_folds = 4
+    n_folds = 2
 
     if sliding_window:
         suf += 'SW_'
 
-    if train_test_different_blocks:
-        n_folds = 2
-        suf += 'train_different_blocks'
     if cleaned:
         suf += '_cleaned'
     SVM_results = np.load(op.join(SVM_results_path, suf + 'SVM_results.npy'), allow_pickle=True).item()

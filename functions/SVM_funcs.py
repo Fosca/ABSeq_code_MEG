@@ -153,9 +153,6 @@ def GAT_SVM_trained_all_sequences(subject,sliding_window=True,cleaned=True,metri
     if sliding_window:
         suf += 'SW_'
 
-    if cleaned:
-        suf += '_cleaned'
-
     # ---------- load the data ------------
     SVM_results = np.load(op.join(saving_directory, suf + 'SVM_results.npy'), allow_pickle=True).item()
     # ---------- load the habituation epochs -------
